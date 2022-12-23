@@ -2,7 +2,7 @@
 
 furi="/data/data/com.termux/files/usr/bin/exli"
 
-echo -e "\e[1;34mInstalling...\e[0m
+echo -e "\e[1;34mInstalling...\e[0m"
 
 if [ -f $furi ] ;
 then
