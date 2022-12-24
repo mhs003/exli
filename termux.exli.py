@@ -148,10 +148,6 @@ args = [arg for arg in argvs[1:] if not arg.startswith("-")]
 if len(args) == 0:
   printHelp()
 
-if len(opts[0]) > 2:
-  opts.insert(0, parseOpt(opts.pop(0)))
-
-
 
 # Argument controllers
 
@@ -163,6 +159,9 @@ elif '-v' in opts or '--version' in opts:
 
 
 if len(opts) > 0:
+  if len(opts[0]) > 2:
+    opts.insert(0, parseOpt(opts.pop(0)))
+    
   cO1 = checkOpts(opts[1:] if type(opts[0]) is list else opts, buildOpts) 
   if cO1[0] == False:
     optNotFound = True
