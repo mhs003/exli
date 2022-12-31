@@ -6,8 +6,8 @@ import re
 import tld
 from random import randint
 
-version = 'v1.1'
-buildOpts = ['-h', '-v', '-p', '-C', '-o', '--help', '--version']
+version = 'v1.2'
+buildOpts = ['-h', '-v', '-p', '-C', '-x', '-o', '--help', '--version']
 
 ## Functions
 def findUrls(string):
@@ -65,13 +65,26 @@ def saveAsFile(dlist, fname = True):
 def printList(alist):
   for itm in alist:
     print(itm)
+    
+def sub_tld(dom):
+  try:
+    return tld.get_tld(dom, fix_protocol=True)
+  except:
+    return False
 
-def domClean(dlist, clean):
+def domClean(dlist, clean, subdo):
   opList = []
   if clean:
     for li in dlist:
       try:
-        opList.append(tld.get_fld(li, fix_protocol=True))
+        the_tld = tld.get_tld(li, as_object=True, fix_protocol=True)
+        if subdo:
+          if sub_tld(the_tld.subdomain):
+            opList.append(tld.get_fld(the_tld.subdomain, fix_protocol=True))
+          else:
+            opList.append(the_tld.fld)
+        else:
+          opList.append(the_tld.fld)
       except:
         pass
     return opList
@@ -107,6 +120,7 @@ Options:
   -p               Extract links from a pdf file
   -C               Extract only domain names from links
   -o               Save links in a file
+  -x               Extract domain from subdomain
   -v, --version    Print program version
   -h, --help       Print this help page
 
@@ -124,7 +138,6 @@ Example usage:
   * Save links from pdf to a text file from given file name
     \033[1;32mexli -p file.pdf -o output.txt\033[0m
   
-  
 Version: {version}
   """.strip())
   
@@ -138,6 +151,7 @@ Version: {version}
 argvs = sys.argv
 pdf = False
 clean = False
+extsd = False
 otFile = False
 optNotFound = False
 errOpt = ""
@@ -161,7 +175,7 @@ elif '-v' in opts or '--version' in opts:
 if len(opts) > 0:
   if len(opts[0]) > 2:
     opts.insert(0, parseOpt(opts.pop(0)))
-
+    
   cO1 = checkOpts(opts[1:] if type(opts[0]) is list else opts, buildOpts) 
   if cO1[0] == False:
     optNotFound = True
@@ -177,6 +191,8 @@ if len(opts) > 0:
           pdf = True
         if '-C' in opts[0]:
           clean = True
+        if '-x' in opts[0]:
+          extsd = True
         if '-o' in opts[0]:
           if len(args) > 1:
             otFile = args[1]
@@ -187,6 +203,8 @@ if len(opts) > 0:
         pdf = True
       if '-C' in opts:
         clean = True
+      if '-x' in opts:
+        extsd = True
   
     if '-o' in opts:
       if not '-o' in opts[0]:
@@ -201,7 +219,7 @@ if len(opts) > 0:
 
 
 if pdf:
-  pdfLinksList = domClean(getFromPdf(args[0]), clean)
+  pdfLinksList = domClean(getFromPdf(args[0]), clean, extsd)
   
   if otFile == False:
     printList(pdfLinksList)
@@ -210,7 +228,7 @@ if pdf:
     print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
     
 else:
-  txtLinksList = domClean(getFromTxtf(args[0]), clean)
+  txtLinksList = domClean(getFromTxtf(args[0]), clean, extsd)
   
   if otFile == False:
     printList(txtLinksList)
