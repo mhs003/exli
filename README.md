@@ -16,6 +16,7 @@ install requirements:
 ```bash
 sudo apt install python3 python3-pip
 sudo pip3 install PyPDF2
+sudo pip3 install tld
 ```
 
 change installer file's permission:
@@ -42,6 +43,7 @@ install requirements:
 ```bash
 pkg install python
 pip install PyPDF2
+pip install tld
 ```
 
 change installer file's permission:
