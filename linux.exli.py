@@ -6,8 +6,8 @@ import re
 import tld
 from random import randint
 
-version = 'v1.2'
-buildOpts = ['-h', '-v', '-p', '-C', '-x', '-o', '--help', '--version']
+version = 'v1.3'
+buildOpts = ['-h', '-v', '-p', '-C', '-x', '-s', '-o', '--help', '--version']
 
 ## Functions
 def findUrls(string):
@@ -51,12 +51,16 @@ def getFromPdf(fname):
   return pdfLinks
   
   
-def saveAsFile(dlist, fname = True):
+def saveAsFile(dlist, fname = True, partNum = False):
   if type(fname) is str:
     if not fname.endswith('.txt'):
-      fname = fname + '.txt'
+        fname = fname + '.txt'
   elif fname == True:
     fname = 'links_{}.txt'.format(randint(1111111, 9999999))
+  
+  if type(partNum) is int:
+    fname = "{}_part-{}.txt".format(fname.rsplit('.txt')[0], partNum)
+    
   sfile = open(fname, 'w')
   sfile.writelines('%s\n' % itm for itm in dlist)
   sfile.close()
@@ -68,7 +72,11 @@ def printList(alist):
     
 def sub_tld(dom):
   try:
-    return tld.get_tld(dom, fix_protocol=True)
+    sp_fld = dom.split('.')
+    if len(sp_fld) > 1:
+      return tld.get_fld(dom, fix_protocol=True)
+    else:
+      return False
   except:
     return False
 
@@ -79,7 +87,7 @@ def domClean(dlist, clean, subdo):
       try:
         the_tld = tld.get_tld(li, as_object=True, fix_protocol=True)
         if subdo:
-          if sub_tld(the_tld.subdomain):
+          if sub_tld(the_tld.subdomain) != False:
             opList.append(tld.get_fld(the_tld.subdomain, fix_protocol=True))
           else:
             opList.append(the_tld.fld)
@@ -120,6 +128,7 @@ Options:
   -p               Extract links from a pdf file
   -C               Extract only domain names from links
   -o               Save links in a file
+  -s               For large files, around 600 links will be saved in multiple files.
   -x               Extract domain from subdomain
   -v, --version    Print program version
   -h, --help       Print this help page
@@ -152,6 +161,7 @@ argvs = sys.argv
 pdf = False
 clean = False
 extsd = False
+splitFile = False
 otFile = False
 optNotFound = False
 errOpt = ""
@@ -193,6 +203,8 @@ if len(opts) > 0:
           clean = True
         if '-x' in opts[0]:
           extsd = True
+        if '-s' in opts[0]:
+          splitFile = True
         if '-o' in opts[0]:
           if len(args) > 1:
             otFile = args[1]
@@ -205,6 +217,8 @@ if len(opts) > 0:
         clean = True
       if '-x' in opts:
         extsd = True
+      if '-s' in opts:
+        splitFile = True
   
     if '-o' in opts:
       if not '-o' in opts[0]:
@@ -219,20 +233,56 @@ if len(opts) > 0:
 
 
 if pdf:
+  print('Processing...')
   pdfLinksList = domClean(getFromPdf(args[0]), clean, extsd)
+  print('\033[1;32mProcessing completed!\033[0m')
+  pdfLinksList = list(dict.fromkeys(pdfLinksList))
   
   if otFile == False:
     printList(pdfLinksList)
   else:
-    opfname = saveAsFile(pdfLinksList, otFile)
-    print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
+    print('\033[1;33mWritting...\033[0m')
+    if splitFile:
+      pLL = [[]]
+      for pLLx in pdfLinksList:
+        if pdfLinksList.index(pLLx) % 600 == 0:
+          pLL.append([])
+          pLL[-1].append(pLLx)
+        else:
+          pLL[-1].append(pLLx)
+      pLL.remove([])
+      
+      for liElem in pLL:
+        opfname = saveAsFile(liElem, otFile, pLL.index(liElem))
+        print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
+    else:
+      opfname = saveAsFile(pdfLinksList, otFile)
+      print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
     
 else:
+  print('Processing...')
   txtLinksList = domClean(getFromTxtf(args[0]), clean, extsd)
+  print('\033[1;32mProcessing completed!\033[0m')
+  txtLinksList = list(dict.fromkeys(txtLinksList))
   
   if otFile == False:
     printList(txtLinksList)
   else:
-    opfname = saveAsFile(txtLinksList, otFile)
-    print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
+    print('\033[1;33mWritting...\033[0m')
+    if splitFile:
+      tLL = [[]]
+      for tLLx in txtLinksList:
+        if txtLinksList.index(tLLx) % 600 == 0:
+          tLL.append([])
+          tLL[-1].append(tLLx)
+        else:
+          tLL[-1].append(tLLx)
+      tLL.remove([])
+      
+      for liElem in tLL:
+        opfname = saveAsFile(liElem, otFile, tLL.index(liElem))
+        print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
+    else:
+      opfname = saveAsFile(txtLinksList, otFile)
+      print(f'{opfname[1]} links are saved to file: \033[1;33m{opfname[0]}\033[0m')
     
